@@ -1,0 +1,6 @@
+{
+  "name": "Meridian Ledger",
+  "description": "Accounting, petty cash, inventory management, and net income budget allocation dashboard powered by Firebase.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
