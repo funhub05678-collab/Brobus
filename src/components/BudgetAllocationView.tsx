@@ -111,7 +111,7 @@ export function BudgetAllocationView() {
           Net Income Budget Allocation &amp; Profit Analytics
         </h1>
         <p className="text-sm text-slate-500 mt-0.5">
-          Interactive visualization of net income distribution across advertising, branding (packaging &amp; labels), reinvestment, and savings.
+          Interactive visualization of net income distribution across advertising, branding &amp; petty cash, reinvestment, and savings.
         </p>
       </div>
 
@@ -217,9 +217,9 @@ export function BudgetAllocationView() {
 
             <div className="p-4 rounded-lg border border-slate-200 bg-slate-50/50">
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Branding (%)
+                Branding &amp; Petty cash (%)
               </label>
-              <p className="text-xs text-slate-500 mb-2.5">Packaging &amp; labels</p>
+              <p className="text-xs text-slate-500 mb-2.5">Packaging, labels &amp; petty cash</p>
               <input
                 type="number"
                 min="0"

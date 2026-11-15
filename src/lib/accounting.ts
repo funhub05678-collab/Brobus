@@ -204,8 +204,8 @@ export function computeNetIncomeAllocations(
     },
     {
       id: 'branding',
-      label: 'Branding',
-      subtitle: 'Packaging, custom labels & print identity',
+      label: 'Branding & Petty cash',
+      subtitle: 'Packaging, labels & petty cash allocation',
       percentage: config.brandingPct,
       amount: (allocatableIncome * config.brandingPct) / 100,
       color: '#D97706', // Warm Amber

@@ -1,5 +1,5 @@
 export type UserRole = 'admin' | 'user';
-export type AllowedUsername = 'admin' | 'niraj';
+export type AllowedUsername = 'admin' | 'user';
 
 export type TransactionType =
   | 'sale'

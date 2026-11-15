@@ -49,10 +49,10 @@ const ACCOUNT_MAP: Record<AllowedUsername, { email: string; password: string; di
     displayName: 'Arlo Admin',
     role: 'admin',
   },
-  niraj: {
-    email: 'niraj@ledgerflow.local',
-    password: 'niraj1234',
-    displayName: 'Niraj User',
+  user: {
+    email: 'user@ledgerflow.local',
+    password: 'user1234',
+    displayName: 'Standard User',
     role: 'user',
   },
 };
@@ -127,7 +127,7 @@ function resolveAccountByEmail(email: string | null | undefined): AllowedUsernam
   if (!email) return null;
   const normalized = email.trim().toLowerCase();
   if (normalized === ACCOUNT_MAP.admin.email) return 'admin';
-  if (normalized === ACCOUNT_MAP.niraj.email) return 'niraj';
+  if (normalized === ACCOUNT_MAP.user.email) return 'user';
   return null;
 }
 
@@ -378,7 +378,7 @@ export function LedgerProvider({ children }: { children: React.ReactNode }) {
     const expected = ACCOUNT_MAP[normalizedUser];
 
     if (!expected || rawPassword !== expected.password) {
-      setAuthError('Invalid username or password. Only authorized admin or niraj credentials are accepted.');
+      setAuthError('Invalid username or password. Only authorized admin or user credentials are accepted.');
       return;
     }
 

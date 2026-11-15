@@ -376,7 +376,7 @@ export function DashboardHome({
                 Net Income Budget Allocation
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Interactive breakdown of {formatCurrency(Math.max(0, financialSummary.netProfit), currency)} net income ({budgetConfig.advertisingPct}% Advertising, {budgetConfig.brandingPct}% Branding, {budgetConfig.reinvestmentPct}% Reinvestment, {budgetConfig.savingsPct}% Savings)
+                Interactive breakdown of {formatCurrency(Math.max(0, financialSummary.netProfit), currency)} net income ({budgetConfig.advertisingPct}% Advertising, {budgetConfig.brandingPct}% Branding &amp; Petty cash, {budgetConfig.reinvestmentPct}% Reinvestment, {budgetConfig.savingsPct}% Savings)
               </p>
             </div>
             <button
