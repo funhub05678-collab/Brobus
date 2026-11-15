@@ -80,6 +80,8 @@ export interface InventoryInput {
   unitCost: number;
   unitPrice: number;
   unitLabel: string;
+  paymentMethod?: PaymentMethod;
+  purchaseDate?: string;
 }
 
 interface LedgerContextValue {
@@ -147,6 +149,26 @@ async function purgeAllWorkspaceCollections(): Promise<void> {
     }
     await batch.commit();
   }
+}
+
+function getTransactionTimestampMs(tx: TransactionRecord): number {
+  const ts = tx.createdAt;
+  if (ts && typeof ts === 'object') {
+    const maybeToMillis = (ts as { toMillis?: () => number }).toMillis;
+    if (typeof maybeToMillis === 'function') {
+      return maybeToMillis.call(ts);
+    }
+    const seconds = (ts as { seconds?: number; nanoseconds?: number }).seconds;
+    if (typeof seconds === 'number') {
+      const nanos = (ts as { nanoseconds?: number }).nanoseconds || 0;
+      return seconds * 1000 + Math.floor(nanos / 1_000_000);
+    }
+  }
+  const match = /^tx_(\d+)_/.exec(tx.id);
+  if (match) {
+    return Number(match[1]);
+  }
+  return 0;
 }
 
 export function LedgerProvider({ children }: { children: React.ReactNode }) {
@@ -313,7 +335,13 @@ export function LedgerProvider({ children }: { children: React.ReactNode }) {
         txQuery,
         (snapshot) => {
           const rows = snapshot.docs.map((d) => d.data() as TransactionRecord);
-          rows.sort((a, b) => b.transactionDate.localeCompare(a.transactionDate));
+          rows.sort((a, b) => {
+            const dateDiff = b.transactionDate.localeCompare(a.transactionDate);
+            if (dateDiff !== 0) return dateDiff;
+            const timeDiff = getTransactionTimestampMs(b) - getTransactionTimestampMs(a);
+            if (timeDiff !== 0) return timeDiff;
+            return b.id.localeCompare(a.id);
+          });
           setTransactions(rows);
           txLoaded = true;
           checkReady();
@@ -539,25 +567,76 @@ export function LedgerProvider({ children }: { children: React.ReactNode }) {
     }
 
     const itemId = generateDocId('inv');
-    try {
-      await setDoc(doc(db, 'inventory', itemId), {
-        id: itemId,
+    const cleanSku = input.sku.trim().slice(0, SCHEMA_LIMITS.SKU_MAX);
+    const cleanName = input.name.trim().slice(0, SCHEMA_LIMITS.ITEM_NAME_MAX);
+    const cleanCategory =
+      input.category.trim().slice(0, SCHEMA_LIMITS.CATEGORY_MAX) || 'General';
+    const cleanUnitLabel =
+      input.unitLabel.trim().slice(0, SCHEMA_LIMITS.UNIT_LABEL_MAX) || 'pcs';
+    const stockRem = Math.max(0, Number(input.stockRemaining));
+    const totalStock = Math.max(Math.max(0, Number(input.totalStockLevel)), stockRem);
+    const reorderLvl = Math.max(0, Number(input.reorderLevel));
+    const unitCost = Math.max(0, Number(input.unitCost));
+    const unitPrice = Math.max(0, Number(input.unitPrice));
+    const totalPurchaseAmount = Number((totalStock * unitCost).toFixed(2));
+    const paymentMethod: PaymentMethod = input.paymentMethod || 'bank';
+
+    const batch = writeBatch(db);
+    const invRef = doc(db, 'inventory', itemId);
+
+    batch.set(invRef, {
+      id: itemId,
+      workspaceId: 'primary_ledger',
+      sku: cleanSku,
+      name: cleanName,
+      category: cleanCategory,
+      totalStockLevel: totalStock,
+      stockRemaining: stockRem,
+      reorderLevel: reorderLvl,
+      unitCost,
+      unitPrice,
+      unitLabel: cleanUnitLabel,
+      createdByUid: firebaseUser.uid,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    if (totalPurchaseAmount > 0) {
+      const txId = generateDocId('tx');
+      const txRef = doc(db, 'transactions', txId);
+      const txTitle = `Stock Purchase: ${cleanName} (${totalStock} ${cleanUnitLabel})`.slice(
+        0,
+        SCHEMA_LIMITS.TITLE_MAX
+      );
+      const txDate =
+        input.purchaseDate && SCHEMA_LIMITS.DATE_REGEX.test(input.purchaseDate)
+          ? input.purchaseDate
+          : new Date().toISOString().slice(0, 10);
+
+      batch.set(txRef, {
+        id: txId,
         workspaceId: 'primary_ledger',
-        sku: input.sku.trim().slice(0, SCHEMA_LIMITS.SKU_MAX),
-        name: input.name.trim().slice(0, SCHEMA_LIMITS.ITEM_NAME_MAX),
-        category: input.category.trim().slice(0, SCHEMA_LIMITS.CATEGORY_MAX),
-        totalStockLevel: Math.max(0, Number(input.totalStockLevel)),
-        stockRemaining: Math.max(0, Number(input.stockRemaining)),
-        reorderLevel: Math.max(0, Number(input.reorderLevel)),
-        unitCost: Math.max(0, Number(input.unitCost)),
-        unitPrice: Math.max(0, Number(input.unitPrice)),
-        unitLabel: input.unitLabel.trim().slice(0, SCHEMA_LIMITS.UNIT_LABEL_MAX) || 'pcs',
+        type: 'purchase',
+        title: txTitle,
+        category: cleanCategory,
+        amount: totalPurchaseAmount,
+        costAmount: 0,
+        quantity: totalStock,
+        inventoryItemId: itemId,
+        paymentMethod,
+        notes: `Auto-deducted from funds for SKU ${cleanSku}`.slice(0, SCHEMA_LIMITS.NOTES_MAX),
+        transactionDate: txDate,
         createdByUid: firebaseUser.uid,
+        createdByUsername: 'admin',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
+    }
+
+    try {
+      await batch.commit();
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, `inventory/${itemId}`);
+      handleFirestoreError(error, OperationType.WRITE, `inventory/${itemId}`);
     }
   };
 

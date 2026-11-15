@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
-import { InventoryItem, SCHEMA_LIMITS } from '../types/accounting';
+import { InventoryItem, PaymentMethod, SCHEMA_LIMITS } from '../types/accounting';
 import { InventoryInput } from '../context/LedgerContext';
 
 interface InventoryModalProps {
@@ -8,6 +8,7 @@ interface InventoryModalProps {
   onClose: () => void;
   editingItem?: InventoryItem | null;
   currencySymbol: string;
+  totalFundsAvailable: number;
   onSave: (input: InventoryInput, editId?: string) => Promise<void>;
 }
 
@@ -16,6 +17,7 @@ export function InventoryModal({
   onClose,
   editingItem = null,
   currencySymbol,
+  totalFundsAvailable,
   onSave,
 }: InventoryModalProps) {
   const [sku, setSku] = useState('');
@@ -27,6 +29,7 @@ export function InventoryModal({
   const [unitCost, setUnitCost] = useState('0');
   const [unitPrice, setUnitPrice] = useState('0');
   const [unitLabel, setUnitLabel] = useState('pcs');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('bank');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,10 +56,20 @@ export function InventoryModal({
       setUnitCost('5.00');
       setUnitPrice('15.00');
       setUnitLabel('pcs');
+      setPaymentMethod('bank');
     }
   }, [isOpen, editingItem]);
 
   if (!isOpen) return null;
+
+  const effectiveTotalStock = Math.max(
+    Math.max(0, Number(totalStockLevel) || 0),
+    Math.max(0, Number(stockRemaining) || 0)
+  );
+  const totalPurchaseAmount = Number(
+    (effectiveTotalStock * Math.max(0, Number(unitCost) || 0)).toFixed(2)
+  );
+  const projectedFundsRemaining = totalFundsAvailable - totalPurchaseAmount;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,6 +99,7 @@ export function InventoryModal({
           unitCost: parsedCost,
           unitPrice: parsedPrice,
           unitLabel: unitLabel.trim() || 'pcs',
+          paymentMethod,
         },
         editingItem?.id
       );
@@ -253,6 +267,57 @@ export function InventoryModal({
               />
             </div>
           </div>
+
+          {!editingItem && (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                  Payment Source (Auto-Deduct from Funds)
+                </label>
+                <select
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+                  className="w-full h-11 px-3 text-sm bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-teal-600"
+                >
+                  <option value="bank">Bank Transfer</option>
+                  <option value="cash">Cash Register</option>
+                  <option value="card">Business Card</option>
+                  <option value="petty_cash">Petty Cash Fund</option>
+                </select>
+              </div>
+
+              <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5 text-xs">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-slate-600">
+                    Total Purchase Amount ({effectiveTotalStock} × {currencySymbol}
+                    {Math.max(0, Number(unitCost) || 0).toFixed(2)})
+                  </span>
+                  <span className="font-mono font-bold tabular-nums text-slate-900">
+                    -{currencySymbol}
+                    {totalPurchaseAmount.toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3 pt-1.5 border-t border-slate-200">
+                  <span className="text-slate-600">Funds Remaining After Deduction</span>
+                  <span
+                    className={`font-mono font-bold tabular-nums ${
+                      projectedFundsRemaining >= 0 ? 'text-slate-900' : 'text-red-700'
+                    }`}
+                  >
+                    {currencySymbol}
+                    {projectedFundsRemaining.toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                    {projectedFundsRemaining < 0 ? ' (Exceeds Balance)' : ''}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {error && (
             <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700">

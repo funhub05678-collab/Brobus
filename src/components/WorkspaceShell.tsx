@@ -384,6 +384,7 @@ export function WorkspaceShell() {
             onClose={() => setInvModalOpen(false)}
             editingItem={editingInv}
             currencySymbol={budgetConfig.currencySymbol || 'Rs '}
+            totalFundsAvailable={financialSummary.totalFundsAvailable}
             onSave={async (input, editId) => {
               if (editId) {
                 await updateInventoryItem(editId, input);
