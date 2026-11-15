@@ -70,7 +70,7 @@ service cloud.firestore {
         ])
         && isValidId(data.id)
         && data.workspaceId is string && data.workspaceId == 'primary_ledger'
-        && data.type is string && data.type in ['sale', 'purchase', 'petty_cash_expense', 'operating_expense', 'petty_cash_topup', 'fund_deposit']
+        && data.type is string && data.type in ['sale', 'purchase', 'petty_cash_expense', 'operating_expense', 'petty_cash_topup', 'fund_deposit', 'capital_expenditure']
         && data.title is string && data.title.size() >= 1 && data.title.size() <= 120
         && data.category is string && data.category.size() >= 1 && data.category.size() <= 64
         && data.amount is number && data.amount > 0

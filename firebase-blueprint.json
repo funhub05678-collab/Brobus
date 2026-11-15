@@ -67,7 +67,7 @@
     },
     "Transaction": {
       "title": "Transaction",
-      "description": "Accounting ledger entry for sales, purchases, petty cash expenses, operating expenses, or petty cash top-ups",
+      "description": "Accounting ledger entry for sales, purchases, petty cash expenses, operating expenses, capital expenditures, fund deposits, or petty cash top-ups",
       "type": "object",
       "properties": {
         "id": {
@@ -83,7 +83,7 @@
         },
         "type": {
           "type": "string",
-          "enum": ["sale", "purchase", "petty_cash_expense", "operating_expense", "petty_cash_topup", "fund_deposit"]
+          "enum": ["sale", "purchase", "petty_cash_expense", "operating_expense", "petty_cash_topup", "fund_deposit", "capital_expenditure"]
         },
         "title": {
           "type": "string",

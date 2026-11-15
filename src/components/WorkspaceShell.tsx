@@ -4,6 +4,9 @@ import {
   ReceiptText,
   Boxes,
   PieChart,
+  Scale,
+  ArrowLeftRight,
+  FileSpreadsheet,
   LogOut,
   Menu,
   X,
@@ -14,6 +17,7 @@ import { DashboardHome } from './DashboardHome';
 import { TransactionsView } from './TransactionsView';
 import { InventoryView } from './InventoryView';
 import { BudgetAllocationView } from './BudgetAllocationView';
+import { FinancialStatementsView } from './FinancialStatementsView';
 import { TransactionModal } from './TransactionModal';
 import { InventoryModal } from './InventoryModal';
 import {
@@ -22,13 +26,32 @@ import {
   TransactionType,
 } from '../types/accounting';
 
-type NavTab = 'home' | 'transactions' | 'inventory' | 'budget';
+type NavTab =
+  | 'home'
+  | 'transactions'
+  | 'inventory'
+  | 'budget'
+  | 'balance_sheet'
+  | 'cash_flow'
+  | 'profit_loss';
 
-const NAV_ITEMS: { id: NavTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+interface NavItem {
+  id: NavTab;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+const NAV_ITEMS: NavItem[] = [
   { id: 'home', label: 'Overview', icon: LayoutDashboard },
   { id: 'transactions', label: 'Transactions', icon: ReceiptText },
   { id: 'inventory', label: 'Inventory', icon: Boxes },
   { id: 'budget', label: 'Budget Allocations', icon: PieChart },
+];
+
+const STATEMENT_NAV_ITEMS: NavItem[] = [
+  { id: 'balance_sheet', label: 'Balance Sheet', icon: Scale },
+  { id: 'cash_flow', label: 'Cash Flow Statement', icon: ArrowLeftRight },
+  { id: 'profit_loss', label: 'Profit & Loss', icon: FileSpreadsheet },
 ];
 
 const TAB_TITLES: Record<NavTab, string> = {
@@ -36,6 +59,9 @@ const TAB_TITLES: Record<NavTab, string> = {
   transactions: 'Transactions & Petty Cash',
   inventory: 'Inventory Management',
   budget: 'Budget Allocations',
+  balance_sheet: 'Balance Sheet',
+  cash_flow: 'Cash Flow Statement',
+  profit_loss: 'Profit & Loss Statement',
 };
 
 export function WorkspaceShell() {
@@ -95,15 +121,38 @@ export function WorkspaceShell() {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-white border-r border-slate-200">
+      <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-white border-r border-slate-200 print:hidden">
         <div className="h-14 px-5 flex items-center border-b border-slate-200">
           <span className="text-base font-bold tracking-tight text-slate-900 whitespace-nowrap">
             Meridian Ledger
           </span>
         </div>
 
-        <nav className="flex-1 p-3 space-y-1" aria-label="Main navigation">
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto" aria-label="Main navigation">
           {NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => handleNavClick(item.id)}
+                className={`w-full h-11 px-3.5 rounded-lg text-sm font-medium flex items-center gap-3 transition-colors whitespace-nowrap ${
+                  isActive
+                    ? 'bg-slate-900 text-white'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+
+          <div className="pt-4 pb-1 px-3.5 text-xs font-semibold text-slate-400">
+            Financial Statements
+          </div>
+          {STATEMENT_NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             return (
@@ -146,7 +195,7 @@ export function WorkspaceShell() {
 
       {/* Mobile Navigation Drawer */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden flex">
+        <div className="fixed inset-0 z-40 lg:hidden flex print:hidden">
           <div
             className="fixed inset-0 bg-slate-900/50"
             onClick={() => setMobileMenuOpen(false)}
@@ -166,7 +215,7 @@ export function WorkspaceShell() {
               </button>
             </div>
 
-            <nav className="flex-1 p-3 space-y-1">
+            <nav className="flex-1 p-3 space-y-1 overflow-y-auto" aria-label="Mobile navigation">
               {NAV_ITEMS.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
@@ -175,7 +224,30 @@ export function WorkspaceShell() {
                     key={item.id}
                     type="button"
                     onClick={() => handleNavClick(item.id)}
-                    className={`w-full h-11 px-3.5 rounded-lg text-sm font-medium flex items-center gap-3 transition-colors ${
+                    className={`w-full h-11 px-3.5 rounded-lg text-sm font-medium flex items-center gap-3 transition-colors whitespace-nowrap ${
+                      isActive
+                        ? 'bg-slate-900 text-white'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+
+              <div className="pt-4 pb-1 px-3.5 text-xs font-semibold text-slate-400">
+                Financial Statements
+              </div>
+              {STATEMENT_NAV_ITEMS.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => handleNavClick(item.id)}
+                    className={`w-full h-11 px-3.5 rounded-lg text-sm font-medium flex items-center gap-3 transition-colors whitespace-nowrap ${
                       isActive
                         ? 'bg-slate-900 text-white'
                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -211,8 +283,8 @@ export function WorkspaceShell() {
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 lg:pl-64 flex flex-col min-w-0">
-        <header className="sticky top-0 z-30 h-14 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between gap-4">
+      <div className="flex-1 lg:pl-64 print:pl-0 flex flex-col min-w-0">
+        <header className="sticky top-0 z-30 h-14 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between gap-4 print:hidden">
           <div className="flex items-center gap-3 min-w-0">
             <button
               type="button"
@@ -278,6 +350,11 @@ export function WorkspaceShell() {
             />
           )}
           {activeTab === 'budget' && <BudgetAllocationView />}
+          {(activeTab === 'balance_sheet' ||
+            activeTab === 'cash_flow' ||
+            activeTab === 'profit_loss') && (
+            <FinancialStatementsView statementType={activeTab} />
+          )}
         </main>
       </div>
 

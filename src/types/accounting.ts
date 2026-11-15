@@ -7,7 +7,8 @@ export type TransactionType =
   | 'petty_cash_expense'
   | 'operating_expense'
   | 'petty_cash_topup'
-  | 'fund_deposit';
+  | 'fund_deposit'
+  | 'capital_expenditure';
 
 export type PaymentMethod = 'petty_cash' | 'bank' | 'cash' | 'card';
 
@@ -94,6 +95,7 @@ export interface FinancialSummary {
   grossMarginPct: number;
   pettyCashExpenses: number;
   operatingExpenses: number;
+  capitalExpenditures: number;
   totalExpenses: number;
   netProfit: number;
   netMarginPct: number;

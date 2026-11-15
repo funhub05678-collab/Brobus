@@ -26,6 +26,7 @@ const TYPE_OPTIONS: { value: TransactionType; label: string }[] = [
   { value: 'purchase', label: 'Inventory Purchase (from Funds)' },
   { value: 'petty_cash_expense', label: 'Petty Cash Expense (from Funds)' },
   { value: 'operating_expense', label: 'Operating Expense (from Funds)' },
+  { value: 'capital_expenditure', label: 'Capital Expenditure (from Funds)' },
   { value: 'fund_deposit', label: 'Fund Deposit / Add Capital' },
   { value: 'petty_cash_topup', label: 'Petty Cash Top-Up' },
 ];
@@ -35,6 +36,7 @@ const DEFAULT_CATEGORIES: Record<TransactionType, string> = {
   purchase: 'Inventory Restock',
   petty_cash_expense: 'Office Supplies',
   operating_expense: 'Utilities & Rent',
+  capital_expenditure: 'Equipment & Fixed Assets',
   fund_deposit: 'Capital Deposit',
   petty_cash_topup: 'Petty Cash Replenishment',
 };
@@ -404,6 +406,7 @@ export function TransactionModal({
             (type === 'purchase' ||
               type === 'petty_cash_expense' ||
               type === 'operating_expense' ||
+              type === 'capital_expenditure' ||
               type === 'fund_deposit' ||
               type === 'sale') && (
               <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 text-xs flex items-center justify-between gap-3">

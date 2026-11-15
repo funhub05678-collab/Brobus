@@ -16,6 +16,7 @@ const FILTER_TABS: { id: 'all' | TransactionType; label: string }[] = [
   { id: 'purchase', label: 'Purchases' },
   { id: 'petty_cash_expense', label: 'Petty Cash' },
   { id: 'operating_expense', label: 'Operating' },
+  { id: 'capital_expenditure', label: 'Capital Exp.' },
 ];
 
 const TYPE_DISPLAY: Record<TransactionType, string> = {
@@ -23,6 +24,7 @@ const TYPE_DISPLAY: Record<TransactionType, string> = {
   purchase: 'Purchase',
   petty_cash_expense: 'Petty Cash Expense',
   operating_expense: 'Operating Expense',
+  capital_expenditure: 'Capital Expenditure',
   petty_cash_topup: 'Petty Cash Top-Up',
   fund_deposit: 'Fund Deposit',
 };

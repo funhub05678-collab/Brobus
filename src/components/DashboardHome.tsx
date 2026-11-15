@@ -21,6 +21,7 @@ const TX_TYPE_LABELS: Record<TransactionType, string> = {
   purchase: 'Purchase',
   petty_cash_expense: 'Petty Cash',
   operating_expense: 'Operating Expense',
+  capital_expenditure: 'Capital Expenditure',
   petty_cash_topup: 'Petty Cash Top-Up',
   fund_deposit: 'Fund Deposit',
 };
@@ -185,9 +186,9 @@ export function DashboardHome({
             </div>
           </div>
           <div className="pt-2 lg:pt-0 lg:pl-4">
-            <div className="text-xs text-slate-500">Expenditures Drawn</div>
+            <div className="text-xs text-slate-500">Expenditures &amp; CapEx Drawn</div>
             <div className="text-sm font-bold text-slate-900 font-mono tabular-nums mt-0.5">
-              -{formatCurrency(financialSummary.totalExpenses, currency)}
+              -{formatCurrency(financialSummary.totalExpenses + financialSummary.capitalExpenditures, currency)}
             </div>
           </div>
         </div>

@@ -18,6 +18,7 @@ export function computeFinancialSummary(
   let totalCOGS = 0;
   let pettyCashExpenses = 0;
   let operatingExpenses = 0;
+  let capitalExpenditures = 0;
   let pettyCashTopups = 0;
   let fundDeposits = 0;
 
@@ -36,6 +37,9 @@ export function computeFinancialSummary(
         break;
       case 'operating_expense':
         operatingExpenses += tx.amount;
+        break;
+      case 'capital_expenditure':
+        capitalExpenditures += tx.amount;
         break;
       case 'petty_cash_topup':
         pettyCashTopups += tx.amount;
@@ -60,7 +64,8 @@ export function computeFinancialSummary(
 
   const openingFunds = budgetConfig.openingFundBalance || 0;
   const totalFundsInflow = openingFunds + fundDeposits + totalSales;
-  const totalFundsOutflow = totalPurchases + pettyCashExpenses + operatingExpenses;
+  const totalFundsOutflow =
+    totalPurchases + pettyCashExpenses + operatingExpenses + capitalExpenditures;
   const totalFundsAvailable = totalFundsInflow - totalFundsOutflow;
 
   return {
@@ -72,6 +77,7 @@ export function computeFinancialSummary(
     grossMarginPct,
     pettyCashExpenses,
     operatingExpenses,
+    capitalExpenditures,
     totalExpenses,
     netProfit,
     netMarginPct,
@@ -463,6 +469,296 @@ export function computeYearlySalesAndStockLevels(
   }
 
   return Array.from(map.values());
+}
+
+export interface StatementLineItem {
+  label: string;
+  amount: number;
+  note?: string;
+}
+
+export interface ProfitAndLossData {
+  revenueByCategory: StatementLineItem[];
+  totalRevenue: number;
+  cogsAmount: number;
+  grossProfit: number;
+  grossMarginPct: number;
+  pettyCashByCategory: StatementLineItem[];
+  operatingByCategory: StatementLineItem[];
+  totalPettyCashExpenses: number;
+  totalOperatingExpenses: number;
+  totalExpenses: number;
+  netProfit: number;
+  netMarginPct: number;
+}
+
+export interface CashFlowData {
+  cashFromSales: number;
+  cashPaidPurchases: number;
+  cashPaidPettyCash: number;
+  cashPaidOperating: number;
+  netOperatingCashFlow: number;
+  cashPaidCapitalExpenditure: number;
+  netInvestingCashFlow: number;
+  openingFundCapital: number;
+  fundDepositsInPeriod: number;
+  netFinancingCashFlow: number;
+  openingCashBalance: number;
+  netChangeInCash: number;
+  endingCashBalance: number;
+  pettyCashDrawerBalance: number;
+}
+
+export interface BalanceSheetData {
+  cashAndFundsAsset: number;
+  inventoryAssetValue: number;
+  totalCurrentAssets: number;
+  capitalExpenditureAsset: number;
+  capitalExpenditureByCategory: StatementLineItem[];
+  totalAssets: number;
+  cashOverdraftLiability: number;
+  accountsPayableLiability: number;
+  totalLiabilities: number;
+  paidInCapital: number;
+  retainedEarnings: number;
+  inventoryCapitalAdjustment: number;
+  totalEquity: number;
+  totalLiabilitiesAndEquity: number;
+  isBalanced: boolean;
+}
+
+export function filterTransactionsByDateRange(
+  transactions: TransactionRecord[],
+  startDate?: string,
+  endDate?: string
+): TransactionRecord[] {
+  return transactions.filter((tx) => {
+    if (startDate && tx.transactionDate < startDate) return false;
+    if (endDate && tx.transactionDate > endDate) return false;
+    return true;
+  });
+}
+
+export function computeProfitAndLoss(
+  transactions: TransactionRecord[]
+): ProfitAndLossData {
+  const revMap = new Map<string, number>();
+  const pettyMap = new Map<string, number>();
+  const opexMap = new Map<string, number>();
+
+  let totalRevenue = 0;
+  let totalCOGS = 0;
+  let totalPurchases = 0;
+  let totalPettyCashExpenses = 0;
+  let totalOperatingExpenses = 0;
+
+  for (const tx of transactions) {
+    if (tx.type === 'sale') {
+      totalRevenue += tx.amount;
+      totalCOGS += tx.costAmount || 0;
+      const cat = tx.category || 'Product Sales';
+      revMap.set(cat, (revMap.get(cat) || 0) + tx.amount);
+    } else if (tx.type === 'purchase') {
+      totalPurchases += tx.amount;
+    } else if (tx.type === 'petty_cash_expense') {
+      totalPettyCashExpenses += tx.amount;
+      const cat = tx.category || 'Petty Cash';
+      pettyMap.set(cat, (pettyMap.get(cat) || 0) + tx.amount);
+    } else if (tx.type === 'operating_expense') {
+      totalOperatingExpenses += tx.amount;
+      const cat = tx.category || 'Operating';
+      opexMap.set(cat, (opexMap.get(cat) || 0) + tx.amount);
+    }
+  }
+
+  const cogsAmount = totalCOGS > 0 ? totalCOGS : totalPurchases;
+  const grossProfit = totalRevenue - cogsAmount;
+  const grossMarginPct = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
+
+  const totalExpenses = totalPettyCashExpenses + totalOperatingExpenses;
+  const netProfit = grossProfit - totalExpenses;
+  const netMarginPct = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+
+  const toSortedItems = (m: Map<string, number>): StatementLineItem[] =>
+    Array.from(m.entries())
+      .map(([label, amount]) => ({ label, amount }))
+      .sort((a, b) => b.amount - a.amount);
+
+  return {
+    revenueByCategory: toSortedItems(revMap),
+    totalRevenue,
+    cogsAmount,
+    grossProfit,
+    grossMarginPct,
+    pettyCashByCategory: toSortedItems(pettyMap),
+    operatingByCategory: toSortedItems(opexMap),
+    totalPettyCashExpenses,
+    totalOperatingExpenses,
+    totalExpenses,
+    netProfit,
+    netMarginPct,
+  };
+}
+
+export function computeCashFlowStatement(
+  allTransactions: TransactionRecord[],
+  budgetConfig: Pick<BudgetConfig, 'openingFundBalance' | 'pettyCashOpeningFloat'>,
+  startDate?: string,
+  endDate?: string
+): CashFlowData {
+  const openingFundCapital = budgetConfig.openingFundBalance || 0;
+
+  // Compute prior-period cash movements before startDate for accurate opening cash
+  let priorNetFlow = 0;
+  if (startDate) {
+    for (const tx of allTransactions) {
+      if (tx.transactionDate >= startDate) continue;
+      if (tx.type === 'sale' || tx.type === 'fund_deposit') {
+        priorNetFlow += tx.amount;
+      } else if (
+        tx.type === 'purchase' ||
+        tx.type === 'petty_cash_expense' ||
+        tx.type === 'operating_expense' ||
+        tx.type === 'capital_expenditure'
+      ) {
+        priorNetFlow -= tx.amount;
+      }
+    }
+  }
+
+  const periodTx = filterTransactionsByDateRange(allTransactions, startDate, endDate);
+
+  let cashFromSales = 0;
+  let cashPaidPurchases = 0;
+  let cashPaidPettyCash = 0;
+  let cashPaidOperating = 0;
+  let cashPaidCapitalExpenditure = 0;
+  let fundDepositsInPeriod = 0;
+
+  for (const tx of periodTx) {
+    switch (tx.type) {
+      case 'sale':
+        cashFromSales += tx.amount;
+        break;
+      case 'purchase':
+        cashPaidPurchases += tx.amount;
+        break;
+      case 'petty_cash_expense':
+        cashPaidPettyCash += tx.amount;
+        break;
+      case 'operating_expense':
+        cashPaidOperating += tx.amount;
+        break;
+      case 'capital_expenditure':
+        cashPaidCapitalExpenditure += tx.amount;
+        break;
+      case 'fund_deposit':
+        fundDepositsInPeriod += tx.amount;
+        break;
+    }
+  }
+
+  const netOperatingCashFlow =
+    cashFromSales - cashPaidPurchases - cashPaidPettyCash - cashPaidOperating;
+  const netInvestingCashFlow = -cashPaidCapitalExpenditure;
+  const netFinancingCashFlow = startDate
+    ? fundDepositsInPeriod
+    : openingFundCapital + fundDepositsInPeriod;
+
+  const openingCashBalance = startDate ? openingFundCapital + priorNetFlow : 0;
+  const netChangeInCash =
+    netOperatingCashFlow + netInvestingCashFlow + netFinancingCashFlow;
+  const endingCashBalance = openingCashBalance + netChangeInCash;
+
+  // Petty cash drawer balance through endDate
+  const upToEndTx = filterTransactionsByDateRange(allTransactions, undefined, endDate);
+  let pettyTopups = 0;
+  let pettySpent = 0;
+  for (const tx of upToEndTx) {
+    if (tx.type === 'petty_cash_topup') pettyTopups += tx.amount;
+    if (tx.type === 'petty_cash_expense') pettySpent += tx.amount;
+  }
+  const pettyCashDrawerBalance =
+    (budgetConfig.pettyCashOpeningFloat || 0) + pettyTopups - pettySpent;
+
+  return {
+    cashFromSales,
+    cashPaidPurchases,
+    cashPaidPettyCash,
+    cashPaidOperating,
+    netOperatingCashFlow,
+    cashPaidCapitalExpenditure,
+    netInvestingCashFlow,
+    openingFundCapital,
+    fundDepositsInPeriod,
+    netFinancingCashFlow,
+    openingCashBalance,
+    netChangeInCash,
+    endingCashBalance,
+    pettyCashDrawerBalance,
+  };
+}
+
+export function computeBalanceSheet(
+  transactions: TransactionRecord[],
+  inventory: InventoryItem[],
+  budgetConfig: Pick<BudgetConfig, 'openingFundBalance' | 'pettyCashOpeningFloat'>,
+  asOfDate?: string
+): BalanceSheetData {
+  const txUpToDate = filterTransactionsByDateRange(transactions, undefined, asOfDate);
+  const summary = computeFinancialSummary(txUpToDate, budgetConfig);
+  const invSummary = computeInventorySummary(inventory);
+
+  const capExMap = new Map<string, number>();
+  for (const tx of txUpToDate) {
+    if (tx.type === 'capital_expenditure') {
+      const cat = tx.category || 'Equipment & Fixed Assets';
+      capExMap.set(cat, (capExMap.get(cat) || 0) + tx.amount);
+    }
+  }
+  const capitalExpenditureByCategory: StatementLineItem[] = Array.from(capExMap.entries())
+    .map(([label, amount]) => ({ label, amount }))
+    .sort((a, b) => b.amount - a.amount);
+
+  const rawFunds = summary.totalFundsAvailable;
+  const cashAndFundsAsset = Math.max(0, rawFunds);
+  const cashOverdraftLiability = rawFunds < 0 ? Math.abs(rawFunds) : 0;
+  const inventoryAssetValue = invSummary.inventoryCostValue;
+  const totalCurrentAssets = cashAndFundsAsset + inventoryAssetValue;
+  const capitalExpenditureAsset = summary.capitalExpenditures;
+  const totalAssets = totalCurrentAssets + capitalExpenditureAsset;
+
+  const accountsPayableLiability = 0;
+  const totalLiabilities = cashOverdraftLiability + accountsPayableLiability;
+
+  const paidInCapital = (budgetConfig.openingFundBalance || 0) + summary.fundDeposits;
+  const retainedEarnings = summary.netProfit;
+
+  // Reconciles contributed/initial inventory not recorded as a cash purchase transaction
+  const inventoryCapitalAdjustment = Number(
+    (totalAssets - totalLiabilities - paidInCapital - retainedEarnings).toFixed(2)
+  );
+
+  const totalEquity = paidInCapital + retainedEarnings + inventoryCapitalAdjustment;
+  const totalLiabilitiesAndEquity = totalLiabilities + totalEquity;
+
+  return {
+    cashAndFundsAsset,
+    inventoryAssetValue,
+    totalCurrentAssets,
+    capitalExpenditureAsset,
+    capitalExpenditureByCategory,
+    totalAssets,
+    cashOverdraftLiability,
+    accountsPayableLiability,
+    totalLiabilities,
+    paidInCapital,
+    retainedEarnings,
+    inventoryCapitalAdjustment,
+    totalEquity,
+    totalLiabilitiesAndEquity,
+    isBalanced: Math.abs(totalAssets - totalLiabilitiesAndEquity) < 0.01,
+  };
 }
 
 export function formatCurrency(value: number, symbol = 'Rs '): string {
