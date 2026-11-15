@@ -269,7 +269,7 @@ export function FinancialStatementsView({
           <div className="px-6 py-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
               <h2 className="text-base font-bold text-slate-900">
-                Meridian Ledger — Profit &amp; Loss Statement
+                Ledger Book — Profit &amp; Loss Statement
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">{periodLabel}</p>
             </div>
@@ -403,7 +403,7 @@ export function FinancialStatementsView({
           <div className="px-6 py-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
               <h2 className="text-base font-bold text-slate-900">
-                Meridian Ledger — Cash Flow Statement
+                Ledger Book — Cash Flow Statement
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
                 Direct Method · {periodLabel}
@@ -545,7 +545,7 @@ export function FinancialStatementsView({
           <div className="px-6 py-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
               <h2 className="text-base font-bold text-slate-900">
-                Meridian Ledger — Balance Sheet
+                Ledger Book — Balance Sheet
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
                 Statement of Financial Position ·{' '}

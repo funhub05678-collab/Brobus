@@ -124,7 +124,7 @@ export function WorkspaceShell() {
       <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-white border-r border-slate-200 print:hidden">
         <div className="h-14 px-5 flex items-center border-b border-slate-200">
           <span className="text-base font-bold tracking-tight text-slate-900 whitespace-nowrap">
-            Meridian Ledger
+            Ledger Book
           </span>
         </div>
 
@@ -203,7 +203,7 @@ export function WorkspaceShell() {
           <aside className="relative w-72 max-w-[85vw] bg-white h-full flex flex-col border-r border-slate-200 z-50">
             <div className="h-14 px-4 flex items-center justify-between border-b border-slate-200">
               <span className="text-base font-bold text-slate-900">
-                Meridian Ledger
+                Ledger Book
               </span>
               <button
                 type="button"
@@ -296,7 +296,7 @@ export function WorkspaceShell() {
             </button>
             <div className="text-sm text-slate-500 truncate flex items-center gap-2">
               <span className="hidden sm:inline font-medium text-slate-700">
-                Meridian Ledger
+                Ledger Book
               </span>
               <span className="hidden sm:inline text-slate-400">/</span>
               <span className="font-semibold text-slate-900 truncate">

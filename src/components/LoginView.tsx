@@ -24,16 +24,19 @@ export function LoginView() {
   const consoleUrl = `https://console.firebase.google.com/project/${FIREBASE_PROJECT_ID}/authentication/providers`;
 
   return (
-    <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-8">
+    <main className="min-h-screen bg-slate-50 flex flex-col items-center justify-center px-4 py-8">
+      <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 text-center mb-6">
+        WELCOME TO TRENDLINE WHOLESALE
+      </h1>
       <div className="w-full max-w-md bg-white border border-slate-200 rounded-xl p-6 sm:p-8 shadow-sm">
         <div className="mb-7">
           <div className="flex items-center gap-2.5 mb-2">
             <div className="w-9 h-9 rounded-lg bg-slate-900 text-white flex items-center justify-center shrink-0">
               <Lock className="w-4 h-4" />
             </div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-900">
-              Meridian Ledger
-            </h1>
+            <h2 className="text-xl font-bold tracking-tight text-slate-900">
+              Ledger Book
+            </h2>
           </div>
           <p className="text-sm text-slate-500">
             Sign in with your authorized workspace credentials to access accounting, inventory, and budget allocations.
